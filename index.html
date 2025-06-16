@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CSV Cleaner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+      padding: 50px;
+    }
+    .drop-zone {
+      border: 2px dashed #aaa;
+      padding: 40px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+    }
+    .drop-zone:hover {
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <h1>CSV Cleaner</h1>
+  <p>Drop your CSV file below to clean it:</p>
+  <div class="drop-zone" id="drop-zone">Drop CSV here or click to upload</div>
+  <input type="file" id="fileInput" accept=".csv" style="display: none" />
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.style.background = '#e2e6ea';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.background = '#fff';
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.style.background = '#fff';
+      handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener('change', () => {
+      handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      if (!file.name.endsWith('.csv')) {
+        alert('Please upload a CSV file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const cleaned = cleanCSV(e.target.result);
+        downloadCleanedCSV(cleaned, file.name.replace('.csv', '_cleaned.csv'));
+      };
+      reader.readAsText(file);
+    }
+
+    function cleanCSV(csvText) {
+      return csvText
+        .split('\n')
+        .map(row =>
+          row
+            .split(',')
+            .map(cell => {
+              const val = cell.trim().toLowerCase();
+              return ['null', 'nil', '0', '/n', '\\n', ''].includes(val) ? '' : cell.replace(/\n/g, '');
+            })
+            .join(',')
+        )
+        .join('\n');
+    }
+
+    function downloadCleanedCSV(text, filename) {
+      const blob = new Blob([text], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+  </script>
+</body>
+</html>
